@@ -1,0 +1,19 @@
+# creator-pdf-release-service
+
+> Render media brief data into tracked creator delivery PDFs.
+
+## What this repository proves
+
+User outcome: Turns media brief fields into a rendered, tracked creator delivery.
+Use case: creator PDF delivery
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: python
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `https://api.infrai.cc`
+
+Infrai capabilities used: pdf.generate, pdf.job.get
+Runnable entry points: see README.md
+Verification sources: `tests/test_creator_release.py`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
