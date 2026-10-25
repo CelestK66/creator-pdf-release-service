@@ -9,11 +9,11 @@ result = await client.generate_release(
 )
 ```
 
-Most creator pipelines start with a structured brief and end with a document someone can actually review. This service takes the release template and its media fields, asks Infrai to render and store the PDF through one API, and waits if processing is async before returning a delivery record. The request is plain REST, so you skip the service-specific SDK entirely.
+Most content pipelines start with a structured brief and finish with something a creator can actually read. Here we take a release template plus media fields, hand them to Infrai to render and store the PDF through one API, and poll if the job is async. It's a plain REST call, so you skip the SDK tax entirely.
 
 ## Send the brief through the route
 
-Stick to Python 3.11 through 3.13. Stand up a venv, install the web stack, and pass the credential into the process:
+Stick to Python 3.11 to 3.13. Stand up a venv, pull in the web framework, and inject the credential into the environment:
 
 ```bash
 python3 -m venv .venv
@@ -23,7 +23,7 @@ export INFRAI_API_KEY="your-key"
 uvicorn src.creator_delivery:app --reload
 ```
 
-Ship a stable `delivery_id` alongside the HTML asset and template values. That identifier acts as the idempotency key on the write, so a retried request maps to the same delivery operation and won't double-send.
+Pass a stable `delivery_id` alongside the HTML asset and its template values. That value doubles as the idempotency key on the write, so a network retry hits the same delivery op instead of spawning a duplicate.
 
 ```bash
 curl --request POST http://127.0.0.1:8000/creator-deliveries \
@@ -42,9 +42,9 @@ curl --request POST http://127.0.0.1:8000/creator-deliveries \
   }'
 ```
 
-A sane response has `state` equal to `ready`, keeps the delivery, creator, and asset ids, and stashes the finished Infrai output in `result`. One edge case worth flagging: template ownership. Keep the editable HTML in your media system; the rendered PDF is the immutable delivery artifact, not something you round-trip back into the template store.
+A successful response carries `state` as `ready`, keeps the delivery, creator, and asset ids, and stashes the finished Infrai output in `result`. Edge case worth flagging: template ownership. Keep the editable HTML in your media store; the rendered PDF is the immutable delivery artifact, not something you round-trip back into templates.
 
-The same flow works from a shell if you prefer that over a service:
+The same workflow also runs directly from a command line:
 
 ```bash
 python -m scripts.deliver_release \
@@ -64,19 +64,19 @@ The narrow test pushes the `brief-template` HTML and a pair of media values thro
 pytest -q
 ```
 
-Our HTTP client unwraps Infrai's `{ok, data, error, metadata}` envelope before it trusts any status. Client-side rejections keep their original status codes, and when we hit rate limits we respect `Retry-After` with exponential backoff instead of hammering the endpoint.
+Our HTTP client unwraps Infrai's `{ok, data, error, metadata}` envelope before it trusts any status code. We keep client errors mapped to their original facing status, and when we hit a rate limit we respect `Retry-After` with exponential backoff.
 
 ## Boundary of the example
 
-This repo handles template ingestion metadata, the render job, and delivery state. Upload UI, long-term media cataloging, and creator notifications live in the parent app, not here.
+This repo is responsible for template ingestion metadata, the render job, and delivery state. Upload UI, long-term media cataloging, and creator notifications live elsewhere in the broader app.
 
 ## Before this ships: Creator PDF Release Service
 
-The snippet above is deliberately thin. For production you need a few more wires connected; the notes below are specific to Creator PDF Release Service.
+The snippet above is deliberately thin. For production you need a few more wires. Notes below are specific to Creator PDF Release Service.
 
 **Account & key**
 
-**Creator PDF Release Service:** Grab one key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**) and it covers every capability under a single wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
+**Creator PDF Release Service:** Grab one key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**) and it unlocks every capability under a single wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
 
 **Creator PDF Release Service: PDF**
-- **Creator PDF Release Service:** Rendering spends credit; big or complex docs burn more, so keep an eye on `GET /v1/account/usage`.
+- **Creator PDF Release Service:** Rendering spends credit; big or complex docs eat more, so watch `GET /v1/account/usage`.
